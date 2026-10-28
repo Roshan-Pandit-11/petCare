@@ -1,4 +1,207 @@
-'use client';
-import Link from 'next/link';import {useState} from 'react';import {PawPrint,Menu,X,ArrowUpRight} from 'lucide-react';
-export function Header(){const [open,setOpen]=useState(false);return <><div className="announcement">A little more peace of mind for every pet parent <span style={{color:'#c9a86a'}}>✳</span></div><header className="header container"><Link className="brand" href="/"><span className="brandmark"><PawPrint size={19}/></span>petcare<span style={{color:'#9aaa91'}}>.</span></Link><nav className={`navlinks ${open?'open':''}`}><Link href="/sitters" onClick={()=>setOpen(false)}>Find a sitter</Link><Link href="/how-it-works" onClick={()=>setOpen(false)}>How it works</Link><Link href="/safety" onClick={()=>setOpen(false)}>Our safety promise</Link><Link href="/become-a-sitter" onClick={()=>setOpen(false)}>Become a sitter</Link></nav><div className="navright"><Link className="login-link" href="/auth/login" style={{fontSize:12,fontWeight:800}}>Log in</Link><Link className="btn btn-small" href="/sitters">Find a stay <ArrowUpRight size={14}/></Link><button className="mobile-toggle" aria-label={open?'Close menu':'Open menu'} onClick={()=>setOpen(!open)}>{open?<X/>:<Menu/>}</button></div></header></>}
-export function Footer(){return <footer className="footer"><div className="container"><div className="footer-grid"><div><Link className="brand" href="/"><span className="brandmark"><PawPrint size={18}/></span>petcare.</Link><p style={{maxWidth:260,marginTop:18,lineHeight:1.9}}>A loving home, whenever you're away. Thoughtful care for the ones who make a house a home.</p><span className="tag">DEMO EXPERIENCE · SAMPLE DATA</span></div><div><h4>Explore</h4><div className="footer-links"><Link href="/sitters">Find a sitter</Link><Link href="/how-it-works">How it works</Link><Link href="/safety">Safety promise</Link><Link href="/faq">FAQs</Link></div></div><div><h4>For sitters</h4><div className="footer-links"><Link href="/become-a-sitter">Become a sitter</Link><Link href="/sitter/dashboard">Sitter dashboard</Link><Link href="/sitter/availability">Manage availability</Link><Link href="/sitter/earnings">Demo earnings</Link></div></div><div><h4>Your account</h4><div className="footer-links"><Link href="/owner/dashboard">Owner dashboard</Link><Link href="/owner/pets">My pets</Link><Link href="/owner/bookings">My bookings</Link><Link href="/admin/dashboard">Admin demo</Link></div></div></div><div className="footer-bottom"><span>© 2026 PetCare · Concept marketplace</span><span>Illustrative data only · No real bookings or payments</span></div></div></footer>}
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { PawPrint, Menu, X, ArrowUpRight } from "lucide-react";
+
+type SessionUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: "OWNER" | "SITTER" | "ADMIN";
+  status?: string;
+};
+
+export function Header() {
+  const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const checkSession = useCallback(async () => {
+    try {
+      const response = await fetch("/api/auth/me", {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+
+      if (response.status === 401) {
+        setUser(null);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Unable to check authentication");
+      }
+
+      const result = await response.json();
+      setUser(result.user ?? null);
+    } catch (error) {
+      console.error("Session check failed:", error);
+      // Keep the current state on temporary network/server errors.
+    } finally {
+      setAuthLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void checkSession();
+  }, [checkSession]);
+
+  async function logOut() {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "same-origin",
+      });
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        alert(result?.error ?? "Logout failed. Please try again.");
+        return;
+      }
+
+      setUser(null);
+      setOpen(false);
+      window.location.assign("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      alert("Unable to log out. Please check your connection.");
+    } finally {
+      setLoggingOut(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="announcement">
+        A little more peace of mind for every pet parent{" "}
+        <span style={{ color: "#c9a86a" }}>✳</span>
+      </div>
+
+      <header className="header container">
+        <Link className="brand" href="/">
+          <span className="brandmark">
+            <PawPrint size={19} />
+          </span>
+          petcare<span style={{ color: "#9aaa91" }}>.</span>
+        </Link>
+
+        <nav className={`navlinks ${open ? "open" : ""}`}>
+          <Link href="/sitters" onClick={() => setOpen(false)}>
+            Find a sitter
+          </Link>
+          <Link href="/how-it-works" onClick={() => setOpen(false)}>
+            How it works
+          </Link>
+          <Link href="/safety" onClick={() => setOpen(false)}>
+            Our safety promise
+          </Link>
+          <Link href="/become-a-sitter" onClick={() => setOpen(false)}>
+            Become a sitter
+          </Link>
+        </nav>
+
+        <div className="navright">
+          {!authLoading && (
+            user ? (
+              <button
+                className="login-link"
+                onClick={logOut}
+                disabled={loggingOut}
+                style={{ fontSize: 12, fontWeight: 800 }}
+              >
+                {loggingOut ? "Logging out..." : "Log out"}
+              </button>
+            ) : (
+              <Link
+                className="login-link"
+                href="/auth/login"
+                style={{ fontSize: 12, fontWeight: 800 }}
+              >
+                Log in
+              </Link>
+            )
+          )}
+
+          <Link className="btn btn-small" href="/sitters">
+            Find a stay <ArrowUpRight size={14} />
+          </Link>
+
+          <button
+            className="mobile-toggle"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            onClick={() => setOpen((previous) => !previous)}
+          >
+            {open ? <X /> : <Menu />}
+          </button>
+        </div>
+      </header>
+    </>
+  );
+}
+
+export function Footer() {
+  return (
+    <footer className="footer">
+      <div className="container">
+        <div className="footer-grid">
+          <div>
+            <Link className="brand" href="/">
+              <span className="brandmark">
+                <PawPrint size={18} />
+              </span>
+              petcare.
+            </Link>
+            <p style={{ maxWidth: 260, marginTop: 18, lineHeight: 1.9 }}>
+              A loving home, whenever you're away. Thoughtful care for the ones
+              who make a house a home.
+            </p>
+            <span className="tag">DEMO EXPERIENCE · SAMPLE DATA</span>
+          </div>
+
+          <div>
+            <h4>Explore</h4>
+            <div className="footer-links">
+              <Link href="/sitters">Find a sitter</Link>
+              <Link href="/how-it-works">How it works</Link>
+              <Link href="/safety">Safety promise</Link>
+              <Link href="/faq">FAQs</Link>
+            </div>
+          </div>
+
+          <div>
+            <h4>For sitters</h4>
+            <div className="footer-links">
+              <Link href="/become-a-sitter">Become a sitter</Link>
+              <Link href="/sitter/dashboard">Sitter dashboard</Link>
+              <Link href="/sitter/availability">Manage availability</Link>
+              <Link href="/sitter/earnings">Demo earnings</Link>
+            </div>
+          </div>
+
+          <div>
+            <h4>Your account</h4>
+            <div className="footer-links">
+              <Link href="/owner/dashboard">Owner dashboard</Link>
+              <Link href="/owner/pets">My pets</Link>
+              <Link href="/owner/bookings">My bookings</Link>
+              <Link href="/admin/dashboard">Admin demo</Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="footer-bottom">
+          <span>© 2026 PetCare · Concept marketplace</span>
+          <span>Illustrative data only · No real bookings or payments</span>
+        </div>
+      </div>
+    </footer>
+  );
+}

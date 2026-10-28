@@ -21,6 +21,7 @@
     "next": "16.4.3",
     "pg": "^8.23.1",
     "postcss": "^8.5.32",
+    "prettier": "^3.9.10",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-hook-form": "^7.62.0",

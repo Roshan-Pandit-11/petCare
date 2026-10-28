@@ -5,7 +5,8 @@ import { prisma } from "@/lib/prisma";
 const COOKIE_NAME = "petcare_session";
 const secret = () => {
   const value = process.env.AUTH_SECRET;
-  if (!value || value.length < 32) throw new Error("AUTH_SECRET must be set to at least 32 characters");
+  if (!value || value.length < 32)
+    throw new Error("AUTH_SECRET must be set to at least 32 characters");
   return new TextEncoder().encode(value);
 };
 
@@ -18,8 +19,11 @@ export async function createSession(user: { id: string; role: string }) {
     .sign(secret());
   const jar = await cookies();
   jar.set(COOKIE_NAME, token, {
-    httpOnly: true, secure: process.env.NODE_ENV === "production",
-    sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 7,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
   });
 }
 
@@ -48,6 +52,13 @@ export async function getSession() {
 
 export async function requireSession() {
   const user = await getSession();
-  if (!user) return { user: null, response: Response.json({ error: "Authentication required" }, { status: 401 }) };
+  if (!user)
+    return {
+      user: null,
+      response: Response.json(
+        { error: "Authentication required" },
+        { status: 401 },
+      ),
+    };
   return { user, response: null };
 }

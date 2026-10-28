@@ -1,1 +1,5 @@
-import {Dashboard} from '@/components/dashboard';export const metadata={title:'users'};export default function Page(){return <Dashboard role="admin" section="users"/>}
+import { Dashboard } from "@/components/dashboard";
+export const metadata = { title: "users" };
+export default function Page() {
+  return <Dashboard role="admin" section="users" />;
+}

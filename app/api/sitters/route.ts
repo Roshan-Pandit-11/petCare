@@ -13,23 +13,41 @@ export async function GET(request: NextRequest) {
   const limit = parsePositiveInt(params.get("limit"), 12, 50);
   const where = {
     isAvailable: true,
-    dailyRate: { gte: Number.isFinite(minRate) ? minRate : 0, lte: Number.isFinite(maxRate) ? maxRate : 100000 },
+    dailyRate: {
+      gte: Number.isFinite(minRate) ? minRate : 0,
+      lte: Number.isFinite(maxRate) ? maxRate : 100000,
+    },
     ...(city ? { city: { contains: city, mode: "insensitive" as const } } : {}),
-    ...(species && ["DOG", "CAT", "BIRD", "RABBIT", "OTHER"].includes(species) ? { acceptedSpecies: { has: species as "DOG" | "CAT" | "BIRD" | "RABBIT" | "OTHER" } } : {}),
-    ...(q ? { OR: [
-      { user: { name: { contains: q, mode: "insensitive" as const } } },
-      { city: { contains: q, mode: "insensitive" as const } },
-      { locality: { contains: q, mode: "insensitive" as const } },
-      { about: { contains: q, mode: "insensitive" as const } },
-    ] } : {}),
+    ...(species && ["DOG", "CAT", "BIRD", "RABBIT", "OTHER"].includes(species)
+      ? {
+          acceptedSpecies: {
+            has: species as "DOG" | "CAT" | "BIRD" | "RABBIT" | "OTHER",
+          },
+        }
+      : {}),
+    ...(q
+      ? {
+          OR: [
+            { user: { name: { contains: q, mode: "insensitive" as const } } },
+            { city: { contains: q, mode: "insensitive" as const } },
+            { locality: { contains: q, mode: "insensitive" as const } },
+            { about: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
   };
   const [data, total] = await prisma.$transaction([
     prisma.sitterProfile.findMany({
-      where, include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+      where,
+      include: { user: { select: { id: true, name: true, avatarUrl: true } } },
       orderBy: [{ averageRating: "desc" }, { dailyRate: "asc" }],
-      skip: (page - 1) * limit, take: limit,
+      skip: (page - 1) * limit,
+      take: limit,
     }),
     prisma.sitterProfile.count({ where }),
   ]);
-  return NextResponse.json({ data, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
+  return NextResponse.json({
+    data,
+    pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+  });
 }

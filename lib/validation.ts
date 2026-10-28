@@ -41,7 +41,9 @@ export const sitterProfileSchema = z.object({
   dailyRate: z.number().int().min(100).max(100000),
   yearsExperience: z.number().int().min(0).max(80).default(0),
   maxPets: z.number().int().min(1).max(20).default(1),
-  acceptedSpecies: z.array(z.enum(["DOG", "CAT", "BIRD", "RABBIT", "OTHER"])).min(1),
+  acceptedSpecies: z
+    .array(z.enum(["DOG", "CAT", "BIRD", "RABBIT", "OTHER"]))
+    .min(1),
   acceptedSizes: z.array(z.string().max(30)).default(["small", "medium"]),
   homeDescription: z.string().max(2000).optional(),
   homeImageUrls: z.array(z.url()).max(20).default([]),
